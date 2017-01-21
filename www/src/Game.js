@@ -7,6 +7,8 @@ var states = {
     game: "game",
 };
 
+var fontStyle = {font: '24px Arial', fill: '#FFFFFF', align: 'center'}
+
 var shipParameters = {
     startX: gameProperties.screenWidth * 0.5,
     startY: gameProperties.screenHeight * 0.5,
@@ -18,6 +20,8 @@ var shipParameters = {
     maxVelocity: 300,
     //max rotation 'speed'
     angularVelocity: 200,
+    startingLives: 3,
+    timeToReset: 1,
 };
 
 var bulletParameters = {
@@ -31,14 +35,35 @@ var bulletParameters = {
     lifespan: 2000,
 };
 
+var asteroidParameters = {
+    //no. of asteroids that appear at the begining
+    startingAsteroids: 10,
+    //max no. of asteroids on the canvas
+    maxAsteroids: 70,
+    //number to increase by per round
+    incrementAsteroids: 2,
+    //min max  velocity = speed min/max AngularVelocity = Rotation
+    asteroidS: { minVelocity: 50, maxVelocity: 300, minAngularVelocity: 0, maxAngularVelocity: 200, score: 100 },
+    asteroidM: { minVelocity: 50, maxVelocity: 200, minAngularVelocity: 0, maxAngularVelocity: 200, score: 50, nextSize: 'asteroidS' },
+    asteroidL: { minVelocity: 50, maxVelocity: 150, minAngularVelocity: 0, maxAngularVelocity: 200, score: 20, nextSize: 'asteroidM' },
+};
+
 var gameState = function(game){
     this.shipSprite;
     
     this.key_left;
     this.key_right;
     this.key_thrust;
+    
     this.bulletGroup;
     this.bulletInterval = 0;
+    
+    this.asteroidGroup;
+    this.asteroidsCount = asteroidParameters.startingAsteroids;
+    //keep track of lives
+    this.shipLives = shipParameters.startingLives;
+    //display remaining
+    this.remainingLives;
 };
 
 gameState.prototype = {
@@ -56,6 +81,7 @@ gameState.prototype = {
     create: function () {
         this.initAssets();
         this.initPhysics();
+        this.resetAsteroids(); 
     },
 
     update: function () {
@@ -64,6 +90,12 @@ gameState.prototype = {
         this.canvasBoundaries(this.shipSprite);
         //let bullets go from edge to edge of canvas
         this.bulletGroup.forEachExists(this.canvasBoundaries, this);
+        //let asteroids go from edge to edge of canvas
+        this.asteroidGroup.forEachExists(this.canvasBoundaries, this);
+        //check if bullet and asteroid overlap, pass effected bullet and asteroid to asteroidCollision function
+        game.physics.arcade.overlap(this.bulletGroup, this.asteroidGroup, this.asteroidCollision, null, this);
+        //check if ship and asteroid overlap, pass effected asteroid and ship to asteroidCollision function
+        game.physics.arcade.overlap(this.shipSprite, this.asteroidGroup, this.asteroidCollision, null, this);
         
     },
     //placxing the ship sprite on the canvas 
@@ -77,6 +109,11 @@ gameState.prototype = {
         this.shipSprite.animations.play('shipMovement',5, true);
         
         this.bulletGroup = game.add.group();
+        this.asteroidGroup = game.add.group();
+        
+        //x,y,text,style
+        this.remainingLives = game.add.text(20, 10, shipParameters.startingLives, fontStyle);
+        
     },
     
 
@@ -98,6 +135,9 @@ gameState.prototype = {
         this.bulletGroup.setAll('anchor.x', 0);
         this.bulletGroup.setAll('anchor.y', 0);
         this.bulletGroup.setAll('lifespan', bulletParameters.lifespan);
+        //enabling physics and setting default engine 
+        this.asteroidGroup.enableBody = true;
+        this.asteroidGroup.physicsBodyType = Phaser.Physics.ARCADE;
         
         this.key_left = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
         this.key_right = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
@@ -140,26 +180,6 @@ gameState.prototype = {
             sprite.y = 0;
         }
     },
-    
-
-    fire: function () {
-        if (game.time.now > this.bulletInterval) {            
-            var bullet = this.bulletGroup.getFirstExists(false);
-            
-            if (bullet) {
-                var length = this.shipSprite.width * 0.5;
-                var x = this.shipSprite.x + (Math.cos(this.shipSprite.rotation) * length);
-                var y = this.shipSprite.y + (Math.sin(this.shipSprite.rotation) * length);
-                
-                bullet.reset(x, y);
-                bullet.lifespan = bulletParameters.lifespan;
-                bullet.rotation = this.shipSprite.rotation;
-                
-                game.physics.arcade.velocityFromRotation(this.shipSprite.rotation, bulletParameters.speed, bullet.body.velocity);
-                this.bulletInterval = game.time.now + bulletParameters.interval;
-            }
-        }
-    },
 
     fire: function () {
         //check that game clock has passed interval 
@@ -183,6 +203,71 @@ gameState.prototype = {
                 this.bulletInterval = game.time.now + bulletParameters.interval;
             }
         }
+    },
+    createAsteroid: function (x, y, asteroidSize) {
+        //create new asteroid, adding to asteroid group
+        var asteroid = this.asteroidGroup.create(x, y, asteroidSize);
+        asteroid.anchor.set(0.5, 0.5);
+        //physics - random velocity
+        asteroid.body.angularVelocity = game.rnd.integerInRange(asteroidParameters[asteroidSize].minAngularVelocity, asteroidParameters[asteroidSize].maxAngularVelocity);
+        //random angle between 180 & -180
+        var randomAngle = game.math.degToRad(game.rnd.angle());
+        //sets random velocity value for new asteroid
+        var randomVelocity = game.rnd.integerInRange(asteroidParameters[asteroidSize].minVelocity, asteroidParameters[asteroidSize].maxVelocity);
+    
+        game.physics.arcade.velocityFromRotation(randomAngle, randomVelocity, asteroid.body.velocity);
+    },
+   
+    //create individual asteroids, randomly postion them
+    resetAsteroids: function () {
+        for (var i=0; i < this.asteroidsCount; i++ ) {
+            //returns 0 or 1, left or right
+            var side = Math.round(Math.random());
+            var x, y;
+            //if side is one/true, asteroid is started on left or right of screen 
+            if (side) {
+                //x value is 0 or 1 multiplied by screenwidth
+                x = Math.round(Math.random()) * gameProperties.screenWidth;
+                //y value is random value between 0 and full width
+                y = Math.random() * gameProperties.screenHeight;
+            } 
+             //if side is zero/false, asteroid is started on top or bottom of screen 
+            else {
+                //x value is random value between 0 and full width
+                x = Math.random() * gameProperties.screenWidth;
+                //y value is 0 or 1 multiplied by screenwidth
+                y = Math.round(Math.random()) * gameProperties.screenHeight;
+            }
+            
+            //create asteroid function, pass in x/y/asteroid size(Asset Name)
+            this.createAsteroid(x, y,'asteroidL');
+            console.log("x: " + x + " y: " +y);
+        }
+    },
+
+
+
+    asteroidCollision: function (target, asteroid) {
+        target.kill();
+        asteroid.kill();
+          
+        if (target.key == 'shipSprite') {
+            this.destroyShip();
+        }
+    },
+    destroyShip: function () {
+        this.shipLives -= 1;
+        this.remainingLives.text = this.shipLives;
+        //if theres lives left (value !0), call reset ship on a timer 
+         if (this.shipLives) {
+             //timer - multiply the phaser second timer function by the timetoReset vairable, call the reset function, context(the ship)
+            game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.resetShip, this);
+        }
+    },
+    
+    resetShip: function () {
+        this.shipSprite.reset(shipParameters.startX, shipParameters.startY);
+        this.shipSprite.angle = 0;
     },
 };
 
