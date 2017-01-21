@@ -7,7 +7,7 @@ var states = {
     game: "game",
 };
 
-var fontStyle = {font: '24px Arial', fill: '#FFFFFF', align: 'center'}
+var fontStyle = {font: '24px Arial', fill: '#FFFFFF', align: 'center'};
 
 var shipParameters = {
     startX: gameProperties.screenWidth * 0.5,
@@ -37,15 +37,17 @@ var bulletParameters = {
 
 var asteroidParameters = {
     //no. of asteroids that appear at the begining
-    startingAsteroids: 10,
+    startingAsteroids: 4,
     //max no. of asteroids on the canvas
     maxAsteroids: 70,
     //number to increase by per round
     incrementAsteroids: 2,
     //min max  velocity = speed min/max AngularVelocity = Rotation
-    asteroidS: { minVelocity: 50, maxVelocity: 300, minAngularVelocity: 0, maxAngularVelocity: 200, score: 100 },
-    asteroidM: { minVelocity: 50, maxVelocity: 200, minAngularVelocity: 0, maxAngularVelocity: 200, score: 50, nextSize: 'asteroidS' },
-    asteroidL: { minVelocity: 50, maxVelocity: 150, minAngularVelocity: 0, maxAngularVelocity: 200, score: 20, nextSize: 'asteroidM' },
+    asteroidS: { minVelocity: 50, maxVelocity: 300, minAngularVelocity: 0, maxAngularVelocity: 200, score: 50 },
+    asteroidM: { minVelocity: 50, maxVelocity: 200, minAngularVelocity: 0, maxAngularVelocity: 200, score: 20, splinters: 2, nextSize: 'asteroidS' },
+    asteroidL: { minVelocity: 50, maxVelocity: 150, minAngularVelocity: 0, maxAngularVelocity: 200, score: 10, splinters: 2, nextSize: 'asteroidM' },
+    
+    
 };
 
 var gameState = function(game){
@@ -61,7 +63,7 @@ var gameState = function(game){
     this.asteroidGroup;
     this.asteroidsCount = asteroidParameters.startingAsteroids;
     //keep track of lives
-    this.shipLives = shipParameters.startingLives;
+    this.lives = shipParameters.startingLives;
     //display remaining
     this.remainingLives;
 };
@@ -75,7 +77,7 @@ gameState.prototype = {
         game.load.image('asteroidS', './asset/asteroidS.png');
         game.load.image('asteroidM', './asset/asteroidM.png');
         game.load.image('asteroidL', './asset/asteroidL.png');
-        game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 80, 48, 10);   
+        game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 48, 48, 10);   
     },
     
     create: function () {
@@ -104,6 +106,7 @@ gameState.prototype = {
         //this.shipSprite = game.add.sprite(shipParameters.startX, shipParameters.startY, 'ship');
         this.shipSprite.angle = 0;
         this.shipSprite.anchor.set(0.1, 0.1);
+        this.shipSprite.scale.setTo(1.5, 1.5);
                 
         this.shipSprite.animations.add('shipMovement');
         this.shipSprite.animations.play('shipMovement',5, true);
@@ -204,18 +207,24 @@ gameState.prototype = {
             }
         }
     },
-    createAsteroid: function (x, y, asteroidSize) {
-        //create new asteroid, adding to asteroid group
-        var asteroid = this.asteroidGroup.create(x, y, asteroidSize);
-        asteroid.anchor.set(0.5, 0.5);
-        //physics - random velocity
-        asteroid.body.angularVelocity = game.rnd.integerInRange(asteroidParameters[asteroidSize].minAngularVelocity, asteroidParameters[asteroidSize].maxAngularVelocity);
-        //random angle between 180 & -180
-        var randomAngle = game.math.degToRad(game.rnd.angle());
-        //sets random velocity value for new asteroid
-        var randomVelocity = game.rnd.integerInRange(asteroidParameters[asteroidSize].minVelocity, asteroidParameters[asteroidSize].maxVelocity);
-    
-        game.physics.arcade.velocityFromRotation(randomAngle, randomVelocity, asteroid.body.velocity);
+
+     createAsteroid: function (x, y, size, asteroidSize, splinters) {
+         //if there is no value defined for no. of splinters, set it to one
+        if (splinters === undefined) { splinters = 1; }
+        
+        for (var i=0; i<splinters; i++) {
+            //create new asteroid, adding to asteroid group
+            var asteroid = this.asteroidGroup.create(x, y, size);
+            asteroid.anchor.set(0.5, 0.5);
+            //physics - random velocity
+            asteroid.body.angularVelocity = game.rnd.integerInRange(asteroidParameters[size].minAngularVelocity, asteroidParameters[size].maxAngularVelocity);
+            //random angle between 180 & -180
+            var randomAngle = game.math.degToRad(game.rnd.angle());
+            //sets random velocity value for new asteroid
+            var randomVelocity = game.rnd.integerInRange(asteroidParameters[size].minVelocity, asteroidParameters[size].maxVelocity);
+ 
+            game.physics.arcade.velocityFromRotation(randomAngle, randomVelocity, asteroid.body.velocity);
+        }
     },
    
     //create individual asteroids, randomly postion them
@@ -250,25 +259,37 @@ gameState.prototype = {
     asteroidCollision: function (target, asteroid) {
         target.kill();
         asteroid.kill();
-          
+        //if the target passed into the function is the ship, call the destroy ship function  
         if (target.key == 'shipSprite') {
             this.destroyShip();
         }
+        //on collision call the splinter asteroid function(gradual breakdown)
+        this.splinterAsteroid(asteroid);
     },
     destroyShip: function () {
-        this.shipLives -= 1;
-        this.remainingLives.text = this.shipLives;
+        this.lives -= 1;
+        this.remainingLives.text = this.lives;
         //if theres lives left (value !0), call reset ship on a timer 
-         if (this.shipLives) {
+         if (this.lives) {
              //timer - multiply the phaser second timer function by the timetoReset vairable, call the reset function, context(the ship)
             game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.resetShip, this);
         }
     },
-    
+    //reset ship after collision with asteroid, place in original start position (centre)
     resetShip: function () {
         this.shipSprite.reset(shipParameters.startX, shipParameters.startY);
         this.shipSprite.angle = 0;
     },
+    
+    
+    splinterAsteroid: function (asteroid) {
+        //cheeck if the effected asteroid has a next size
+        if (asteroidParameters[asteroid.key].nextSize) {
+            //create a new asteroid, with the new size, in the exact same place
+            this.createAsteroid(asteroid.x, asteroid.y, asteroidParameters[asteroid.key].nextSize, asteroidParameters[asteroid.key].splinters);
+        }
+    },
+
 };
 
 var game = new Phaser.Game(gameProperties.screenWidth, gameProperties.screenHeight, Phaser.AUTO, 'game');
