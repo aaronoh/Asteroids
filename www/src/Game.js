@@ -7,15 +7,6 @@ var states = {
     game: "game",
 };
 
-var Assets = {
-    //array of assests used in the game, the images for the asteroids/bullet/ship, each with a name and url 
-    ship:{URL:'./asset/ship.png', name:'ship'},
-    bullet:{URL:'./asset/bullet.png', name:'bullet'},    
-    asteroidS:{URL:'./asset/asteroidS.png', name:'asteroidSmall'},
-    asteroidM:{URL:'./asset/asteroidM.png', name:'asteroidMedium'},
-    asteroidL:{URL:'./asset/asteroidL.png', name:'asteroidLarge'},
-};
-
 var shipParameters = {
     startX: gameProperties.screenWidth * 0.5,
     startY: gameProperties.screenHeight * 0.5,
@@ -54,12 +45,12 @@ gameState.prototype = {
     
     preload: function () {
         //preload image - name + url
-        game.load.image(Assets.ship.name, Assets.ship.URL);
-        game.load.image(Assets.bullet.name, Assets.bullet.URL);        
-        game.load.image(Assets.asteroidS.name, Assets.asteroidS.URL);
-        game.load.image(Assets.asteroidM.name, Assets.asteroidM.URL);
-        game.load.image(Assets.asteroidL.name, Assets.asteroidL.URL);   
-       
+        //game.load.image('ship', './asset/ship.png');
+        game.load.image('bullet', './asset/bullet.png');        
+        game.load.image('asteroidS', './asset/asteroidS.png');
+        game.load.image('asteroidM', './asset/asteroidM.png');
+        game.load.image('asteroidL', './asset/asteroidL.png');
+        game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 80, 48, 10);   
     },
     
     create: function () {
@@ -77,9 +68,13 @@ gameState.prototype = {
     },
     //placxing the ship sprite on the canvas 
     initAssets: function () {
-        this.shipSprite = game.add.sprite(shipParameters.startX, shipParameters.startY, Assets.ship.name);
-        this.shipSprite.angle = -90;
-        this.shipSprite.anchor.set(0.5, 0.5);
+        this.shipSprite = game.add.sprite(shipParameters.startX, shipParameters.startY,'shipSprite');
+        //this.shipSprite = game.add.sprite(shipParameters.startX, shipParameters.startY, 'ship');
+        this.shipSprite.angle = 0;
+        this.shipSprite.anchor.set(0.1, 0.1);
+                
+        this.shipSprite.animations.add('shipMovement');
+        this.shipSprite.animations.play('shipMovement',5, true);
         
         this.bulletGroup = game.add.group();
     },
@@ -99,9 +94,9 @@ gameState.prototype = {
         
         this.bulletGroup.enableBody = true;
         this.bulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
-        this.bulletGroup.createMultiple(bulletParameters.maxCount, Assets.bullet.name);
-        this.bulletGroup.setAll('anchor.x', 0.5);
-        this.bulletGroup.setAll('anchor.y', 0.5);
+        this.bulletGroup.createMultiple(bulletParameters.maxCount, 'bullet');
+        this.bulletGroup.setAll('anchor.x', 0);
+        this.bulletGroup.setAll('anchor.y', 0);
         this.bulletGroup.setAll('lifespan', bulletParameters.lifespan);
         
         this.key_left = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
@@ -120,7 +115,8 @@ gameState.prototype = {
         }
         
         if (this.key_thrust.isDown) {
-            game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation, shipParameters.acceleration, this.shipSprite.body.acceleration);
+            console.log(this.shipSprite.rotation);
+            game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.acceleration, this.shipSprite.body.acceleration);
         } else {
             this.shipSprite.body.acceleration.set(0);
         }
@@ -182,7 +178,7 @@ gameState.prototype = {
                 bullet.lifespan = bulletParameters.lifespan;
                 bullet.rotation = this.shipSprite.rotation;
                 //set speed of bullet
-                game.physics.arcade.velocityFromRotation(this.shipSprite.rotation, bulletParameters.speed, bullet.body.velocity);
+                game.physics.arcade.velocityFromRotation(this.shipSprite.rotation - 3.5/2, bulletParameters.speed, bullet.body.velocity);
                 //update bullet interval
                 this.bulletInterval = game.time.now + bulletParameters.interval;
             }
