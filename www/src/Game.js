@@ -1,6 +1,6 @@
 var gameProperties = {
-    screenWidth: 640,
-    screenHeight: 960,
+    screenWidth: 400,
+    screenHeight: 750,
 };
 
 var states = {
@@ -8,7 +8,7 @@ var states = {
 };
 
 var fontStyle = {font: '24px Arial', fill: '#FFFFFF', align: 'center'};
-
+var thruster = false;
 var shipParameters = {
     startX: gameProperties.screenWidth * 0.5,
     startY: gameProperties.screenHeight * 0.5,
@@ -66,6 +66,7 @@ var gameState = function(game){
     this.lives = shipParameters.startingLives;
     //display remaining
     this.remainingLives;
+    
 };
 
 gameState.prototype = {
@@ -77,13 +78,18 @@ gameState.prototype = {
         game.load.image('asteroidS', './asset/asteroidS.png');
         game.load.image('asteroidM', './asset/asteroidM.png');
         game.load.image('asteroidL', './asset/asteroidL.png');
+        game.load.image('upArrow', './asset/up-arrow.png');
+        game.load.image('leftArrow', './asset/left-arrow.png');
+        game.load.image('rightArrow', './asset/right-arrow.png');
+        game.load.image('fire', './asset/rec.png');
         game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 48, 48, 10);   
     },
     
     create: function () {
         this.initAssets();
         this.initPhysics();
-        this.resetAsteroids(); 
+        this.resetAsteroids();
+
     },
 
     update: function () {
@@ -167,7 +173,44 @@ gameState.prototype = {
         if (this.key_fire.isDown) {
             this.fire();
         }
-    },
+                        
+        thrustButton = game.add.button(10, 700, 'upArrow', thrust, this);
+        thrustButton.onInputOver.add(thrust, this);
+        thrustButton.onInputOut.add(thrust, this);
+        thrustButton.onInputUp.add(thrust, this);
+        thrustButton.onInputDown.add(thrust, this);  
+     function thrust() {
+         game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.acceleration, this.shipSprite.body.acceleration);
+     }
+        
+        leftButton = game.add.button(300, 700, 'leftArrow', left, this);
+        leftButton.onInputOver.add(thrust, this);
+        leftButton.onInputOut.add(thrust, this);
+        leftButton.onInputUp.add(thrust, this);
+        leftButton.onInputDown.add(thrust, this);  
+     function left() {
+         this.shipSprite.body.angularVelocity = -shipParameters.angularVelocity;
+     }
+        
+        rightButton = game.add.button(375, 700, 'rightArrow', right, this);
+        rightButton.onInputOver.add(thrust, this);
+        rightButton.onInputOut.add(thrust, this);
+        rightButton.onInputUp.add(thrust, this);
+        rightButton.onInputDown.add(thrust, this);  
+     function right() {
+         this.shipSprite.body.angularVelocity = shipParameters.angularVelocity;
+     }
+        
+        fireButton = game.add.button(150, 700, 'fire', fire, this);
+        fireButton.onInputOver.add(fire, this);
+        fireButton.onInputOut.add(fire, this);
+        fireButton.onInputUp.add(fire, this);
+        fireButton.onInputDown.add(fire, this);  
+     function fire() {
+          this.fire();
+     }
+        
+},
     
 //stop sprite from leaving canvas - can go from edge to edge
     canvasBoundaries: function (sprite) {
