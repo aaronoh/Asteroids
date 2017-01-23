@@ -1,6 +1,7 @@
 var gameProperties = {
     screenWidth: 400,
     screenHeight: 750,
+    newLevelTimer: 3,
 };
 
 var states = {
@@ -39,13 +40,13 @@ var asteroidParameters = {
     //no. of asteroids that appear at the begining
     startingAsteroids: 4,
     //max no. of asteroids on the canvas
-    maxAsteroids: 70,
+    maxAsteroids: 11,
     //number to increase by per round
-    incrementAsteroids: 2,
+    incrementAsteroids: 1,
     //min max  velocity = speed min/max AngularVelocity = Rotation
-    asteroidS: { minVelocity: 50, maxVelocity: 300, minAngularVelocity: 0, maxAngularVelocity: 200, score: 50 },
-    asteroidM: { minVelocity: 50, maxVelocity: 200, minAngularVelocity: 0, maxAngularVelocity: 200, score: 20, splinters: 2, nextSize: 'asteroidS' },
-    asteroidL: { minVelocity: 50, maxVelocity: 150, minAngularVelocity: 0, maxAngularVelocity: 200, score: 10, splinters: 2, nextSize: 'asteroidM' },
+    asteroidS: { minVelocity: 50, maxVelocity: 300, minAngularVelocity: 0, maxAngularVelocity: 200, points: 50 },
+    asteroidM: { minVelocity: 50, maxVelocity: 200, minAngularVelocity: 0, maxAngularVelocity: 200, points: 20, splinters: 2, nextSize: 'asteroidS' },
+    asteroidL: { minVelocity: 50, maxVelocity: 150, minAngularVelocity: 0, maxAngularVelocity: 200, points: 10, splinters: 2, nextSize: 'asteroidM' },
     
     
 };
@@ -61,11 +62,15 @@ var gameState = function(game){
     this.bulletInterval = 0;
     
     this.asteroidGroup;
-    this.asteroidsCount = asteroidParameters.startingAsteroids;
+    this.asteroidCount = asteroidParameters.startingAsteroids;
     //keep track of lives
     this.lives = shipParameters.startingLives;
     //display remaining
     this.remainingLives;
+    //keep track of points
+    this.points = 0;
+    //display score
+    this.totalPoints
     
 };
 
@@ -121,7 +126,9 @@ gameState.prototype = {
         this.asteroidGroup = game.add.group();
         
         //x,y,text,style
-        this.remainingLives = game.add.text(20, 10, shipParameters.startingLives, fontStyle);
+        //displaying text
+        this.remainingLives = game.add.text(20, 10, "Lives: " + shipParameters.startingLives, fontStyle);
+        this.totalPoints = game.add.text(gameProperties.screenWidth - 120, 10, "Points: 0", fontStyle);
         
     },
     
@@ -272,7 +279,7 @@ gameState.prototype = {
    
     //create individual asteroids, randomly postion them
     resetAsteroids: function () {
-        for (var i=0; i < this.asteroidsCount; i++ ) {
+        for (var i=0; i < this.asteroidCount; i++ ) {
             //returns 0 or 1, left or right
             var side = Math.round(Math.random());
             var x, y;
@@ -308,10 +315,19 @@ gameState.prototype = {
         }
         //on collision call the splinter asteroid function(gradual breakdown)
         this.splinterAsteroid(asteroid);
+        //on collision call the points function to update the scoring system
+        this.updatePoints(asteroidParameters[asteroid.key].points);
+        //checks if there are any asteroids exisitng in game
+        if (!this.asteroidGroup.countLiving()) {
+            game.time.events.add(Phaser.Timer.SECOND * gameProperties.newLevelTimer, this.newLevel, this);
+        }
     },
     destroyShip: function () {
+        //decrease available  lives by one 
         this.lives -= 1;
-        this.remainingLives.text = this.lives;
+        //deduct 50 points for death
+        this.points -= 50;
+        this.remainingLives.text = "Lives: " + this.lives;
         //if theres lives left (value !0), call reset ship on a timer 
          if (this.lives) {
              //timer - multiply the phaser second timer function by the timetoReset vairable, call the reset function, context(the ship)
@@ -325,12 +341,32 @@ gameState.prototype = {
     },
     
     
+
+    updatePoints: function (points) {
+        this.points += points;
+        this.totalPoints.text = "Points: " +this.points;
+    },
+    
+    
     splinterAsteroid: function (asteroid) {
         //cheeck if the effected asteroid has a next size
         if (asteroidParameters[asteroid.key].nextSize) {
             //create a new asteroid, with the new size, in the exact same place
             this.createAsteroid(asteroid.x, asteroid.y, asteroidParameters[asteroid.key].nextSize, asteroidParameters[asteroid.key].splinters);
+            console.log(this.asteroidCount)
         }
+    },
+    
+
+    newLevel: function () {
+        //remove all asteroids from previous group
+        this.asteroidGroup.removeAll(true);
+        //check that start number is less than max defined
+        if (this.asteroidCount < asteroidParameters.maxAsteroids) {
+            this.asteroidCount += asteroidParameters.incrementAsteroids;
+        }
+        //call reset asteroids to begin next round 
+        this.resetAsteroids();
     },
 
 };
