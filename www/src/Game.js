@@ -21,7 +21,7 @@ var shipParameters = {
     maxVelocity: 300,
     //max rotation 'speed'
     angularVelocity: 200,
-    startingLives: 3,
+    startingLives: 5,
     timeToReset: 1,
 };
 
@@ -70,7 +70,10 @@ var gameState = function(game){
     //keep track of points
     this.points = 0;
     //display score
-    this.totalPoints
+    this.totalPoints;
+    this.safeShip;
+
+    
     
 };
 
@@ -87,7 +90,10 @@ gameState.prototype = {
         game.load.image('leftArrow', './asset/left-arrow.png');
         game.load.image('rightArrow', './asset/right-arrow.png');
         game.load.image('fire', './asset/rec.png');
-        game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 48, 48, 10);   
+        game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 48, 48, 10);
+        game.load.audio('fireSound', './asset/laser-freesound.org.mp3');
+        game.load.audio('explosionSound', './asset/explosion-freesound.org.mp3');
+        game.load.audio('deathSound', './asset/gameover-freesound.org.mp3');
     },
     
     create: function () {
@@ -107,8 +113,10 @@ gameState.prototype = {
         this.asteroidGroup.forEachExists(this.canvasBoundaries, this);
         //check if bullet and asteroid overlap, pass effected bullet and asteroid to asteroidCollision function
         game.physics.arcade.overlap(this.bulletGroup, this.asteroidGroup, this.asteroidCollision, null, this);
-        //check if ship and asteroid overlap, pass effected asteroid and ship to asteroidCollision function
-        game.physics.arcade.overlap(this.shipSprite, this.asteroidGroup, this.asteroidCollision, null, this);
+        //if the ship is not in a safe state, check if ship and asteroid overlap, pass effected asteroid and ship to asteroidCollision function
+        if(!this.safeShip){
+             game.physics.arcade.overlap(this.shipSprite, this.asteroidGroup, this.asteroidCollision, null, this);
+        }
         
     },
     //placxing the ship sprite on the canvas 
@@ -129,6 +137,10 @@ gameState.prototype = {
         //displaying text
         this.remainingLives = game.add.text(20, 10, "Lives: " + shipParameters.startingLives, fontStyle);
         this.totalPoints = game.add.text(gameProperties.screenWidth - 120, 10, "Points: 0", fontStyle);
+        
+        this.playFireSound = game.add.audio('fireSound');
+        this.playExplosionSound = game.add.audio('explosionSound');
+        this.playDeathSound = game.add.audio('deathSound');
         
     },
     
@@ -235,8 +247,13 @@ gameState.prototype = {
     },
 
     fire: function () {
+        if (!this.shipSprite.alive) {
+            console.log("Dead");
+            return;
+        }
         //check that game clock has passed interval 
-        if (game.time.now > this.bulletInterval) {   
+        if (game.time.now > this.bulletInterval) { 
+            this.playFireSound.play();
             //get first object in group, false - doesnt exist
             var bullet = this.bulletGroup.getFirstExists(false);
             ///if bullet successfully retrieved 
@@ -307,6 +324,7 @@ gameState.prototype = {
 
 
     asteroidCollision: function (target, asteroid) {
+        this.playExplosionSound.play();
         target.kill();
         asteroid.kill();
         //if the target passed into the function is the ship, call the destroy ship function  
@@ -333,13 +351,19 @@ gameState.prototype = {
              //timer - multiply the phaser second timer function by the timetoReset vairable, call the reset function, context(the ship)
             game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.resetShip, this);
         }
+        else{this.playDeathSound.play();}
     },
     //reset ship after collision with asteroid, place in original start position (centre)
     resetShip: function () {
+        this.safeShip=true;
         this.shipSprite.reset(shipParameters.startX, shipParameters.startY);
         this.shipSprite.angle = 0;
+        game.time.events.add(Phaser.Timer.SECOND * 5, this.shipNotSafe, this);
     },
     
+    shipNotSafe: function(){
+        this.safeShip = false;
+    },    
     
 
     updatePoints: function (points) {
