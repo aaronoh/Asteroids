@@ -5,11 +5,31 @@ var gameProperties = {
 };
 
 var states = {
+    main: "main",
     game: "game",
 };
 
+var mainState = function(game){
+    this.menuText;
+};
+
 var fontStyle = {font: '24px Arial', fill: '#FFFFFF', align: 'center'};
-var thruster = false;
+mainState.prototype={
+    preload: function(){
+       game.load.image('menu', './asset/startScreen.png'); 
+    },
+create: function () {
+
+    this.menuSprite = game.add.sprite(0, 0, 'menu');
+        
+        game.input.onDown.addOnce(this.startGame, this);
+        
+    },
+    
+    startGame: function () {
+        game.state.start(states.game);
+    },
+};
 
 var shipParameters = {
     startX: gameProperties.screenWidth * 0.5,
@@ -41,7 +61,7 @@ var bulletParameters = {
 
 var asteroidParameters = {
     //no. of asteroids that appear at the begining
-    startingAsteroids: 4,
+    startingAsteroids: 3,
     //max no. of asteroids on the canvas
     maxAsteroids: 11,
     //number to increase by per round
@@ -84,7 +104,7 @@ gameState.prototype = {
     
     preload: function () {
         //preload image - name + url
-        //game.load.image('ship', './asset/ship.png');
+        game.load.image('bg', './asset/bg.png');
         game.load.image('bullet', './asset/bullet.png');        
         game.load.image('asteroidS', './asset/asteroidS.png');
         game.load.image('asteroidM', './asset/asteroidM.png');
@@ -93,7 +113,7 @@ gameState.prototype = {
         game.load.image('leftArrow', './asset/left-arrow.png');
         game.load.image('rightArrow', './asset/right-arrow.png');
         game.load.image('fire', './asset/rec.png');
-        game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 48, 48, 10);
+        game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 15, 24, 5);
         game.load.audio('fireSound', './asset/laser-freesound.org.mp3');
         game.load.audio('explosionSound', './asset/explosion-freesound.org.mp3');
         game.load.audio('deathSound', './asset/gameover-freesound.org.mp3');
@@ -102,7 +122,7 @@ gameState.prototype = {
     create: function () {
         this.initAssets();
         this.initPhysics();
-        //this.resetAsteroids();
+        this.resetAsteroids();
         this.keySetup();
 
     },
@@ -125,11 +145,12 @@ gameState.prototype = {
     },
     //placxing the ship sprite on the canvas 
     initAssets: function () {
+        this.bgSprite = game.add.sprite(0, 0, 'bg');
         this.shipSprite = game.add.sprite(shipParameters.startX, shipParameters.startY,'shipSprite');
         //this.shipSprite = game.add.sprite(shipParameters.startX, shipParameters.startY, 'ship');
         this.shipSprite.angle = 0;
         this.shipSprite.anchor.set(0.1, 0.1);
-        this.shipSprite.scale.setTo(1.5, 1.5);
+        this.shipSprite.scale.setTo(1.75, 1.75);
                 
         this.shipSprite.animations.add('shipMovement');
         this.shipSprite.animations.play('shipMovement',5, true);
@@ -187,7 +208,7 @@ gameState.prototype = {
         }
         
         if (this.key_thrust.isDown) {
-            console.log(this.shipSprite.rotation);
+            //console.log("Rotation: " + this.shipSprite.rotation);
             game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.acceleration, this.shipSprite.body.acceleration);
         } else {
             this.shipSprite.body.acceleration.set(0);
@@ -274,7 +295,6 @@ gameState.prototype = {
        thrustButton.onInputOut.add(thrust, this);
        thrustButton.onInputUp.add(thrust, this);
         thrustButton.onInputDown.add(thrust, this);
-        console.log(thrustButton);
         
 
         leftButton = game.add.button(300, 700, 'leftArrow', left, this);
@@ -421,7 +441,7 @@ gameState.prototype = {
         this.points -= 50;
         this.remainingLives.text = "Lives: " + this.lives;
         //if theres lives left (value !0), call reset ship on a timer 
-         if (this.lives) {
+         if (this.lives>0) {
              //timer - multiply the phaser second timer function by the timetoReset vairable, call the reset function, context(the ship)
             game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.resetShip, this);
         }
@@ -451,7 +471,7 @@ gameState.prototype = {
         if (asteroidParameters[asteroid.key].nextSize) {
             //create a new asteroid, with the new size, in the exact same place
             this.createAsteroid(asteroid.x, asteroid.y, asteroidParameters[asteroid.key].nextSize, asteroidParameters[asteroid.key].splinters);
-            console.log(this.asteroidCount)
+            //console.log(this.asteroidCount + " asteroids remaining")
         }
     },
     
@@ -470,5 +490,6 @@ gameState.prototype = {
 };
 
 var game = new Phaser.Game(gameProperties.screenWidth, gameProperties.screenHeight, Phaser.AUTO, 'game');
+game.state.add(states.main, mainState);
 game.state.add(states.game, gameState);
-game.state.start(states.game);
+game.state.start(states.main);
