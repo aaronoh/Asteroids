@@ -22,7 +22,8 @@ create: function () {
 
     this.menuSprite = game.add.sprite(0, 0, 'menu');
         
-        game.input.onDown.addOnce(this.startGame, this);
+       game.input.onDown.addOnce(this.startGame, this);
+    this.key_start = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
         
     },
     
@@ -445,7 +446,9 @@ gameState.prototype = {
              //timer - multiply the phaser second timer function by the timetoReset vairable, call the reset function, context(the ship)
             game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.resetShip, this);
         }
-        else{this.playDeathSound.play();}
+        else{this.playDeathSound.play();
+            game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.gameOver, this);
+            }
     },
     //reset ship after collision with asteroid, place in original start position (centre)
     resetShip: function () {
@@ -486,6 +489,10 @@ gameState.prototype = {
         //call reset asteroids to begin next round 
         this.resetAsteroids();
     },
+    
+    gameOver: function(){
+        game.state.start(states.main);
+    }
 
 };
 
