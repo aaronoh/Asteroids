@@ -5,7 +5,7 @@
       "projectTypeName": "com.intel.xdk.projecttype.jsapp",
       "src": "jsapp/template-phaser-portrait/sample.zip",
       "projectGuid": "d478f6d2-889e-45b4-8bf9-6faac9eab0c6",
-      "lastModifiedDate": 1485372364768,
+      "lastModifiedDate": 1485432736472,
       "creationDate": 1483390204427
     },
     "sourceDirectory": "www",
@@ -108,7 +108,7 @@
           "android-signed": true
         },
         "isActive_": true,
-        "certificateId_": "",
+        "certificateId_": "MUVKjkb8p0qk0k3CDBLX4Q2",
         "appName_": "CA-Asteroids2",
         "appID_": "xdk.intel.phaser.js.project",
         "appAccess_": {

@@ -23,7 +23,6 @@ create: function () {
     this.menuSprite = game.add.sprite(0, 0, 'menu');
         
        game.input.onDown.addOnce(this.startGame, this);
-    this.key_start = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
         
     },
     
@@ -115,9 +114,9 @@ gameState.prototype = {
         game.load.image('rightArrow', './asset/right-arrow.png');
         game.load.image('fire', './asset/rec.png');
         game.load.spritesheet('shipSprite','./asset/newSpriteSheet.png', 15, 24, 5);
-        game.load.audio('fireSound', './asset/laser-freesound.org.mp3');
-        game.load.audio('explosionSound', './asset/explosion-freesound.org.mp3');
-        game.load.audio('deathSound', './asset/gameover-freesound.org.mp3');
+        game.load.audio('fireSound', './asset/laser-freesound.org.ogg');
+        game.load.audio('explosionSound', './asset/explosion-freesound.org.ogg');
+        game.load.audio('deathSound', './asset/gameover-freesound.org.ogg');
     },
     
     create: function () {
@@ -162,7 +161,7 @@ gameState.prototype = {
         //x,y,text,style
         //displaying text
         this.remainingLives = game.add.text(20, 10, "Lives: " + shipParameters.startingLives, fontStyle);
-        this.totalPoints = game.add.text(gameProperties.screenWidth - 120, 10, "Points: 0", fontStyle);
+        this.totalPoints = game.add.text(gameProperties.screenWidth - 150, 10, "Points: 0", fontStyle);
         
         this.playFireSound = game.add.audio('fireSound');
         this.playExplosionSound = game.add.audio('explosionSound');
@@ -172,17 +171,11 @@ gameState.prototype = {
     
 
     initPhysics: function () {
-        game.physics.startSystem(Phaser.Physics.ARCADE);
-        
-        game.physics.enable(this.shipSprite, Phaser.Physics.ARCADE);
-        this.shipSprite.body.drag.set(shipParameters.drag);
-        this.shipSprite.body.maxVelocity.set(shipParameters.maxVelocity);
-        //initalize the phaser physics engine
+        //initalize the phaser physics engine 
         game.physics.startSystem(Phaser.Physics.ARCADE);
         game.physics.enable(this.shipSprite, Phaser.Physics.ARCADE);
         this.shipSprite.body.drag.set(shipParameters.drag);
-        this.shipSprite.body.maxVelocity.set(shipParameters.maxVelocity);
-        
+        this.shipSprite.body.maxVelocity.set(shipParameters.maxVelocity);     
         this.bulletGroup.enableBody = true;
         this.bulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
         this.bulletGroup.createMultiple(bulletParameters.maxCount, 'bullet');
@@ -219,54 +212,6 @@ gameState.prototype = {
             this.fire();
         }
         
-        
-//        var thrustNow = false;
-//        console.log(thrustNow);
-//        thrustButton = game.add.button(10, 700, 'upArrow', thrust, this);
-//       thrustButton.onInputOver.add(thrust, this);
-//       thrustButton.onInputOut.add(thrust, this);
-//       thrustButton.onInputUp.add(thrust, this);
-//        thrustButton.onInputDown.add(thrust, this);
-//        console.log(thrustButton);
-//        
-//     function thrust() {
-//         thrustNow = true;
-//         console.log('thrust' + thrustNow);
-//         //game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.acceleration, this.shipSprite.body.acceleration);
-//     }
-//        console.log("im"+thrustNow);
-//        while( thrustNow){
-//            console.log("NOW");
-//            game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.acceleration, this.shipSprite.body.acceleration);
-//        }
-        
-//        leftButton = game.add.button(300, 700, 'leftArrow', left, this);
-//        leftButton.onInputOver.add(thrust, this);
-//        leftButton.onInputOut.add(thrust, this);
-//        leftButton.onInputUp.add(thrust, this);
-//        leftButton.onInputDown.add(left, this);  
-//     function left() {
-//         this.shipSprite.body.angularVelocity = -shipParameters.angularVelocity;
-//     }
-//        
-//        rightButton = game.add.button(375, 700, 'rightArrow', right, this);
-//        rightButton.onInputOver.add(thrust, this);
-//        rightButton.onInputOut.add(thrust, this);
-//        rightButton.onInputUp.add(thrust, this);
-//        rightButton.onInputDown.add(thrust, this);  
-//     function right() {
-//         this.shipSprite.body.angularVelocity = shipParameters.angularVelocity;
-//     }
-//        
-//        fireButton = game.add.button(150, 700, 'fire', fire, this);
-//        fireButton.onInputOver.add(fire, this);
-//        fireButton.onInputOut.add(fire, this);
-//        fireButton.onInputUp.add(fire, this);
-//        fireButton.onInputDown.add(fire, this);  
-//     function fire() {
-//          this.fire();
-//     }
-        
 },
     keySetup: function(){
 //        var thrustNow = false;
@@ -288,9 +233,13 @@ gameState.prototype = {
 //            console.log("NOW");
 //            game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.acceleration, this.shipSprite.body.acceleration);
 //        }
+        
+        //Touch controls
+        //function used to move ship forward, uses a different acceleration value to make control easier
              function thrust() {
            game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.touchAcceleration, this.shipSprite.body.acceleration);
      }
+        //calliing thrust/left/right function on input Over/Out/Up/Down -> Not ideal soloution for touch controls, tried using boolean & while loop but couldnt get it to work
        thrustButton = game.add.button(10, 700, 'upArrow', thrust, this);
        thrustButton.onInputOver.add(thrust, this);
        thrustButton.onInputOut.add(thrust, this);
@@ -299,23 +248,23 @@ gameState.prototype = {
         
 
         leftButton = game.add.button(300, 700, 'leftArrow', left, this);
-        leftButton.onInputOver.add(thrust, this);
-        leftButton.onInputOut.add(thrust, this);
-        leftButton.onInputUp.add(thrust, this);
+        leftButton.onInputOver.add(left, this);
+        leftButton.onInputOut.add(left, this);
+        leftButton.onInputUp.add(left, this);
         leftButton.onInputDown.add(left, this);  
      function left() {
          this.shipSprite.body.angularVelocity = -shipParameters.touchAngularVelocity;
      }
         
-        rightButton = game.add.button(375, 700, 'rightArrow', right, this);
-        rightButton.onInputOver.add(thrust, this);
-        rightButton.onInputOut.add(thrust, this);
-        rightButton.onInputUp.add(thrust, this);
-        rightButton.onInputDown.add(thrust, this);  
+        rightButton = game.add.button(370, 700, 'rightArrow', right, this);
+        rightButton.onInputOver.add(right, this);
+        rightButton.onInputOut.add(right, this);
+        rightButton.onInputUp.add(right, this);
+        rightButton.onInputDown.add(right, this);  
      function right() {
          this.shipSprite.body.angularVelocity = shipParameters.touchAngularVelocity;
      }
-        
+        //fire 
         fireButton = game.add.button(150, 700, 'fire', fire, this);
         fireButton.onInputOver.add(fire, this);
         fireButton.onInputOut.add(fire, this);
@@ -419,6 +368,7 @@ gameState.prototype = {
 
 
     asteroidCollision: function (target, asteroid) {
+        //on collission play explosion sound
         this.playExplosionSound.play();
         target.kill();
         asteroid.kill();
@@ -446,23 +396,27 @@ gameState.prototype = {
              //timer - multiply the phaser second timer function by the timetoReset vairable, call the reset function, context(the ship)
             game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.resetShip, this);
         }
-        else{this.playDeathSound.play();
+        //play game over sound and return to main title screen (after timer)
+        else{
+            this.playDeathSound.play();
             game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.gameOver, this);
             }
     },
     //reset ship after collision with asteroid, place in original start position (centre)
     resetShip: function () {
+        //reposition ship at centre
         this.safeShip=true;
         this.shipSprite.reset(shipParameters.startX, shipParameters.startY);
         this.shipSprite.angle = 0;
+        //after 5 seconds turn the ship back to its not safe state (change boolean back to false)
         game.time.events.add(Phaser.Timer.SECOND * 5, this.shipNotSafe, this);
     },
-    
+    //used to return the ship to normal state after a timer
     shipNotSafe: function(){
         this.safeShip = false;
     },    
     
-
+    //add to points total, set text field
     updatePoints: function (points) {
         this.points += points;
         this.totalPoints.text = "Points: " +this.points;
@@ -491,12 +445,15 @@ gameState.prototype = {
     },
     
     gameOver: function(){
+        //when this function is called it just returns to the 'main' state, which simply displays the start screen
         game.state.start(states.main);
     }
 
 };
 
 var game = new Phaser.Game(gameProperties.screenWidth, gameProperties.screenHeight, Phaser.AUTO, 'game');
+//adding game states
 game.state.add(states.main, mainState);
 game.state.add(states.game, gameState);
+//starting game with main state
 game.state.start(states.main);
