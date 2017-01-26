@@ -16,16 +16,16 @@ var mainState = function(game){
 var fontStyle = {font: '24px Arial', fill: '#FFFFFF', align: 'center'};
 mainState.prototype={
     preload: function(){
-       game.load.image('menu', './asset/startScreen.png'); 
+       game.load.image('menu', './asset/startScreen.png');
     },
 create: function () {
 
     this.menuSprite = game.add.sprite(0, 0, 'menu');
-        
+
        game.input.onDown.addOnce(this.startGame, this);
-        
+
     },
-    
+
     startGame: function () {
         game.state.start(states.game);
     },
@@ -37,7 +37,7 @@ var shipParameters = {
     //speed of velocity increase
     acceleration: 300,
     touchAcceleration: 1000,
-    //friction - slows down sprite 
+    //friction - slows down sprite
     drag: 100,
     //max 'speed'
     maxVelocity: 300,
@@ -70,20 +70,20 @@ var asteroidParameters = {
     asteroidS: { minVelocity: 50, maxVelocity: 300, minAngularVelocity: 0, maxAngularVelocity: 200, points: 50 },
     asteroidM: { minVelocity: 50, maxVelocity: 200, minAngularVelocity: 0, maxAngularVelocity: 200, points: 20, splinters: 2, nextSize: 'asteroidS' },
     asteroidL: { minVelocity: 50, maxVelocity: 150, minAngularVelocity: 0, maxAngularVelocity: 200, points: 10, splinters: 2, nextSize: 'asteroidM' },
-    
-    
+
+
 };
 
 var gameState = function(game){
     this.shipSprite;
-    
+
     this.key_left;
     this.key_right;
     this.key_thrust;
-    
+
     this.bulletGroup;
     this.bulletInterval = 0;
-    
+
     this.asteroidGroup;
     this.asteroidCount = asteroidParameters.startingAsteroids;
     //keep track of lives
@@ -96,16 +96,16 @@ var gameState = function(game){
     this.totalPoints;
     this.safeShip;
 
-    
-    
+
+
 };
 
 gameState.prototype = {
-    
+
     preload: function () {
         //preload image - name + url
         game.load.image('bg', './asset/bg.png');
-        game.load.image('bullet', './asset/bullet.png');        
+        game.load.image('bullet', './asset/bullet.png');
         game.load.image('asteroidS', './asset/asteroidS.png');
         game.load.image('asteroidM', './asset/asteroidM.png');
         game.load.image('asteroidL', './asset/asteroidL.png');
@@ -118,7 +118,7 @@ gameState.prototype = {
         game.load.audio('explosionSound', './asset/explosion-freesound.org.ogg');
         game.load.audio('deathSound', './asset/gameover-freesound.org.ogg');
     },
-    
+
     create: function () {
         this.initAssets();
         this.initPhysics();
@@ -141,9 +141,9 @@ gameState.prototype = {
         if(!this.safeShip){
              game.physics.arcade.overlap(this.shipSprite, this.asteroidGroup, this.asteroidCollision, null, this);
         }
-        
+
     },
-    //placxing the ship sprite on the canvas 
+    //placxing the ship sprite on the canvas
     initAssets: function () {
         this.bgSprite = game.add.sprite(0, 0, 'bg');
         this.shipSprite = game.add.sprite(shipParameters.startX, shipParameters.startY,'shipSprite');
@@ -151,41 +151,41 @@ gameState.prototype = {
         this.shipSprite.angle = 0;
         this.shipSprite.anchor.set(0.1, 0.1);
         this.shipSprite.scale.setTo(1.75, 1.75);
-                
+
         this.shipSprite.animations.add('shipMovement');
         this.shipSprite.animations.play('shipMovement',5, true);
-        
+
         this.bulletGroup = game.add.group();
         this.asteroidGroup = game.add.group();
-        
+
         //x,y,text,style
         //displaying text
         this.remainingLives = game.add.text(20, 10, "Lives: " + shipParameters.startingLives, fontStyle);
         this.totalPoints = game.add.text(gameProperties.screenWidth - 150, 10, "Points: 0", fontStyle);
-        
+
         this.playFireSound = game.add.audio('fireSound');
         this.playExplosionSound = game.add.audio('explosionSound');
         this.playDeathSound = game.add.audio('deathSound');
-        
+
     },
-    
+
 
     initPhysics: function () {
-        //initalize the phaser physics engine 
+        //initalize the phaser physics engine
         game.physics.startSystem(Phaser.Physics.ARCADE);
         game.physics.enable(this.shipSprite, Phaser.Physics.ARCADE);
         this.shipSprite.body.drag.set(shipParameters.drag);
-        this.shipSprite.body.maxVelocity.set(shipParameters.maxVelocity);     
+        this.shipSprite.body.maxVelocity.set(shipParameters.maxVelocity);
         this.bulletGroup.enableBody = true;
         this.bulletGroup.physicsBodyType = Phaser.Physics.ARCADE;
         this.bulletGroup.createMultiple(bulletParameters.maxCount, 'bullet');
         this.bulletGroup.setAll('anchor.x', 0);
         this.bulletGroup.setAll('anchor.y', 0);
         this.bulletGroup.setAll('lifespan', bulletParameters.lifespan);
-        //enabling physics and setting default engine 
+        //enabling physics and setting default engine
         this.asteroidGroup.enableBody = true;
         this.asteroidGroup.physicsBodyType = Phaser.Physics.ARCADE;
-        
+
         this.key_left = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
         this.key_right = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
         this.key_thrust = game.input.keyboard.addKey(Phaser.Keyboard.UP);
@@ -200,18 +200,18 @@ gameState.prototype = {
         } else {
             this.shipSprite.body.angularVelocity = 0;
         }
-        
+
         if (this.key_thrust.isDown) {
             //console.log("Rotation: " + this.shipSprite.rotation);
             game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.acceleration, this.shipSprite.body.acceleration);
         } else {
             this.shipSprite.body.acceleration.set(0);
         }
-        
+
         if (this.key_fire.isDown) {
             this.fire();
         }
-        
+
 },
     keySetup: function(){
 //        var thrustNow = false;
@@ -222,7 +222,7 @@ gameState.prototype = {
 //       thrustButton.onInputUp.add(thrust, this);
 //        thrustButton.onInputDown.add(thrust, this);
 //        console.log(thrustButton);
-//        
+//
 //     function thrust() {
 //         thrustNow = true;
 //         console.log('thrust' + thrustNow);
@@ -233,7 +233,7 @@ gameState.prototype = {
 //            console.log("NOW");
 //            game.physics.arcade.accelerationFromRotation(this.shipSprite.rotation - 3.14/2, shipParameters.acceleration, this.shipSprite.body.acceleration);
 //        }
-        
+
         //Touch controls
         //function used to move ship forward, uses a different acceleration value to make control easier
              function thrust() {
@@ -245,44 +245,44 @@ gameState.prototype = {
        thrustButton.onInputOut.add(thrust, this);
        thrustButton.onInputUp.add(thrust, this);
         thrustButton.onInputDown.add(thrust, this);
-        
+
 
         leftButton = game.add.button(300, 700, 'leftArrow', left, this);
         leftButton.onInputOver.add(left, this);
         leftButton.onInputOut.add(left, this);
         leftButton.onInputUp.add(left, this);
-        leftButton.onInputDown.add(left, this);  
+        leftButton.onInputDown.add(left, this);
      function left() {
          this.shipSprite.body.angularVelocity = -shipParameters.touchAngularVelocity;
      }
-        
+
         rightButton = game.add.button(370, 700, 'rightArrow', right, this);
         rightButton.onInputOver.add(right, this);
         rightButton.onInputOut.add(right, this);
         rightButton.onInputUp.add(right, this);
-        rightButton.onInputDown.add(right, this);  
+        rightButton.onInputDown.add(right, this);
      function right() {
          this.shipSprite.body.angularVelocity = shipParameters.touchAngularVelocity;
      }
-        //fire 
+        //fire
         fireButton = game.add.button(150, 700, 'fire', fire, this);
         fireButton.onInputOver.add(fire, this);
         fireButton.onInputOut.add(fire, this);
         fireButton.onInputUp.add(fire, this);
-        fireButton.onInputDown.add(fire, this);  
+        fireButton.onInputDown.add(fire, this);
      function fire() {
           this.fire();
      }
     },
-    
+
 //stop sprite from leaving canvas - can go from edge to edge
     canvasBoundaries: function (sprite) {
         if (sprite.x < 0) {
             sprite.x = game.width;
         } else if (sprite.x > game.width) {
             sprite.x = 0;
-        } 
- 
+        }
+
         if (sprite.y < 0) {
             sprite.y = game.height;
         } else if (sprite.y > game.height) {
@@ -295,12 +295,12 @@ gameState.prototype = {
             console.log("Dead");
             return;
         }
-        //check that game clock has passed interval 
-        if (game.time.now > this.bulletInterval) { 
+        //check that game clock has passed interval
+        if (game.time.now > this.bulletInterval) {
             this.playFireSound.play();
             //get first object in group, false - doesnt exist
             var bullet = this.bulletGroup.getFirstExists(false);
-            ///if bullet successfully retrieved 
+            ///if bullet successfully retrieved
             if (bullet) {
                 //place bullet at front of ship
                 var length = this.shipSprite.width * 0.5;
@@ -322,7 +322,7 @@ gameState.prototype = {
      createAsteroid: function (x, y, size, asteroidSize, splinters) {
          //if there is no value defined for no. of splinters, set it to one
         if (splinters === undefined) { splinters = 1; }
-        
+
         for (var i=0; i<splinters; i++) {
             //create new asteroid, adding to asteroid group
             var asteroid = this.asteroidGroup.create(x, y, size);
@@ -333,32 +333,32 @@ gameState.prototype = {
             var randomAngle = game.math.degToRad(game.rnd.angle());
             //sets random velocity value for new asteroid
             var randomVelocity = game.rnd.integerInRange(asteroidParameters[size].minVelocity, asteroidParameters[size].maxVelocity);
- 
+
             game.physics.arcade.velocityFromRotation(randomAngle, randomVelocity, asteroid.body.velocity);
         }
     },
-   
+
     //create individual asteroids, randomly postion them
     resetAsteroids: function () {
         for (var i=0; i < this.asteroidCount; i++ ) {
             //returns 0 or 1, left or right
             var side = Math.round(Math.random());
             var x, y;
-            //if side is one/true, asteroid is started on left or right of screen 
+            //if side is one/true, asteroid is started on left or right of screen
             if (side) {
                 //x value is 0 or 1 multiplied by screenwidth
                 x = Math.round(Math.random()) * gameProperties.screenWidth;
                 //y value is random value between 0 and full width
                 y = Math.random() * gameProperties.screenHeight;
-            } 
-             //if side is zero/false, asteroid is started on top or bottom of screen 
+            }
+             //if side is zero/false, asteroid is started on top or bottom of screen
             else {
                 //x value is random value between 0 and full width
                 x = Math.random() * gameProperties.screenWidth;
                 //y value is 0 or 1 multiplied by screenwidth
                 y = Math.round(Math.random()) * gameProperties.screenHeight;
             }
-            
+
             //create asteroid function, pass in x/y/asteroid size(Asset Name)
             this.createAsteroid(x, y,'asteroidL');
             //console.log("x: " + x + " y: " +y);
@@ -372,7 +372,7 @@ gameState.prototype = {
         this.playExplosionSound.play();
         target.kill();
         asteroid.kill();
-        //if the target passed into the function is the ship, call the destroy ship function  
+        //if the target passed into the function is the ship, call the destroy ship function
         if (target.key == 'shipSprite') {
             this.destroyShip();
         }
@@ -386,12 +386,12 @@ gameState.prototype = {
         }
     },
     destroyShip: function () {
-        //decrease available  lives by one 
+        //decrease available  lives by one
         this.lives -= 1;
         //deduct 50 points for death
         this.points -= 50;
         this.remainingLives.text = "Lives: " + this.lives;
-        //if theres lives left (value !0), call reset ship on a timer 
+        //if theres lives left (value !0), call reset ship on a timer
          if (this.lives>0) {
              //timer - multiply the phaser second timer function by the timetoReset vairable, call the reset function, context(the ship)
             game.time.events.add(Phaser.Timer.SECOND * shipParameters.timeToReset, this.resetShip, this);
@@ -414,15 +414,15 @@ gameState.prototype = {
     //used to return the ship to normal state after a timer
     shipNotSafe: function(){
         this.safeShip = false;
-    },    
-    
+    },
+
     //add to points total, set text field
     updatePoints: function (points) {
         this.points += points;
         this.totalPoints.text = "Points: " +this.points;
     },
-    
-    
+
+
     splinterAsteroid: function (asteroid) {
         //cheeck if the effected asteroid has a next size
         if (asteroidParameters[asteroid.key].nextSize) {
@@ -431,7 +431,7 @@ gameState.prototype = {
             //console.log(this.asteroidCount + " asteroids remaining")
         }
     },
-    
+
 
     newLevel: function () {
         //remove all asteroids from previous group
@@ -440,10 +440,10 @@ gameState.prototype = {
         if (this.asteroidCount < asteroidParameters.maxAsteroids) {
             this.asteroidCount += asteroidParameters.incrementAsteroids;
         }
-        //call reset asteroids to begin next round 
+        //call reset asteroids to begin next round
         this.resetAsteroids();
     },
-    
+
     gameOver: function(){
         //when this function is called it just returns to the 'main' state, which simply displays the start screen
         game.state.start(states.main);
